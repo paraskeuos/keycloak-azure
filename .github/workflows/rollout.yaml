@@ -33,7 +33,7 @@ jobs:
         run: terraform init
 
       - name: Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -var="vm_admin_user=${{ secrets.VM_ADMIN_USER }}" -out=tfplan
 
       - name: Apply
         run: terraform apply -auto-approve tfplan

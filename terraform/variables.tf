@@ -13,3 +13,8 @@ variable "stack_name" {
   type        = string
   default     = "keycloak-podman"
 }
+
+variable "vm_admin_user" {
+  type        = string
+  default     = "adminuser"
+}
