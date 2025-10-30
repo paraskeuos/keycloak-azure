@@ -1,0 +1,31 @@
+{
+  "realm": "{{ realm_name }}",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "{{ oauth2_client_id }}",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "redirectUris": ["https://{{ host_ip }}{{ '' if reverse_proxy_port == 443 else ':' ~ reverse_proxy_port }}/oauth2/callback"],
+      "publicClient": false,
+      "secret": "{{ oauth2_client_secret }}"
+    }
+  ],
+  "users": [
+    {
+      "username": "{{ oauth2_test_username }}",
+      "enabled": true,
+      "requiredActions": [],
+      "email": "{{ oauth2_test_username }}@email.com",
+      "firstName": "FirstName",
+      "lastName": "LastName",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "{{ oauth2_test_password }}"
+        }
+      ]
+    }
+  ]
+}

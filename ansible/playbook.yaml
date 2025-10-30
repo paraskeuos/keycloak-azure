@@ -1,0 +1,140 @@
+- hosts: all
+  vars_files:
+    - vars.yaml
+  vars:
+    work_dir: "{{ ansible_env.HOME }}/ansible"
+    kc_admin_username: "{{ lookup('env', 'KC_ADMIN_USERNAME') }}"
+    kc_admin_password: "{{ lookup('env', 'KC_ADMIN_PASSWORD') }}"
+    oauth2_client_id: "{{ lookup('env', 'CLIENT_ID') | default('myclient') }}"
+    oauth2_client_secret: "{{ lookup('env', 'CLIENT_SECRET') }}"
+    oauth2_cookie_secret: "{{ lookup('env', 'COOKIE_SECRET') }}"
+    host_ip: "{{ ansible_host }}"
+    host_cert_dir: "{{ work_dir }}/certs"
+    assets_dir: "{{ work_dir }}/assets"
+    oauth2_test_username: "{{ lookup('env', 'TEST_USERNAME') }}"
+    oauth2_test_password: "{{ lookup('env', 'TEST_PASSWORD') }}"
+  tasks:
+    - name: Install packages
+      become: true
+      package:
+        name:
+          - firewalld
+          - podman
+          - runc
+        state: present
+
+    - name: Start firewalld service
+      become: true
+      service:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Add firewall ingress rules
+      become: true
+      loop:
+        - 22
+        - "{{ reverse_proxy_port }}"
+      firewalld:
+        port: "{{ item }}/tcp"
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: Allow opening of ports >=443
+      become: true
+      command: sysctl -w net.ipv4.ip_unprivileged_port_start=443
+
+    - name: Configure container runtime
+      become: true
+      copy:
+        dest: /etc/containers/containers.conf
+        content: |
+          [engine]
+          runtime = "runc"
+
+    - name: Create working directory
+      file: 
+        path: "{{ work_dir }}"
+        state: directory 
+
+    - name: Create certificate directory
+      file: 
+        path: "{{ host_cert_dir }}"
+        state: directory
+
+    - name: Generate certificate configuration file
+      template:
+        src: templates/config/{{ cert_config }}.j2
+        dest: "{{ work_dir }}/{{ cert_config }}"
+
+    - name: Check if certificate is present
+      stat:
+        path: "{{ host_cert_dir }}/{{ cert_public }}"
+      register: cert_stat
+
+    - name: Generate self-signed certificate
+      command: |
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -config {{ work_dir }}/{{ cert_config }} \
+          -keyout {{ host_cert_dir }}/{{ cert_private }} \
+          -out {{ host_cert_dir }}/{{ cert_public }}
+      when: not cert_stat.stat.exists
+
+    - name: Create web assets directory
+      file:
+        path: "{{ assets_dir }}"
+        state: directory
+
+    - name: Generate static web page
+      template:
+        src: templates/assets/index.html.j2
+        dest: "{{ assets_dir }}/index.html"
+
+    - name: Generate pod declarations
+      loop: "{{ pods }}"
+      template:
+        src: templates/pods/{{ item }}.yaml.j2
+        dest: "{{ work_dir }}/{{ item }}.yaml"
+
+    - name: Generate reverse proxy configuration file
+      template:
+        src: templates/config/{{ reverse_proxy_config }}.j2
+        dest: "{{ work_dir }}/{{ reverse_proxy_config }}"
+
+    - name: Generate realm configuration file
+      template:
+        src: templates/config/{{ realm_config }}.j2
+        dest: "{{ work_dir }}/{{ realm_config }}" 
+
+    - name: Create rootless service configuration directory
+      file:
+        path: "{{ ansible_env.HOME }}/.config/systemd/user"
+        state: directory
+
+    - name: Generate service wrapper scripts
+      loop: "{{ pods }}"
+      template:
+        src: templates/config/pod_service.sh.j2
+        dest: "{{ work_dir }}/{{ item }}_service.sh"
+        mode: "0700"
+
+    - name: Generate service configuration files
+      loop: "{{ pods }}"
+      template: 
+        src: templates/config/pod.service.j2
+        dest: "{{ ansible_env.HOME }}/.config/systemd/user/{{ item }}.service"
+
+    - name: Enable user linger
+      become: true
+      shell: loginctl enable-linger {{ ansible_user_id }}
+      
+    - name: Systemd daemon reload
+      shell: XDG_RUNTIME_DIR="/run/user/$(id -u)" systemctl --user daemon-reload
+
+    - name: Start pod services
+      loop: "{{ pods }}"
+      shell: |
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user enable {{ item }}.service
+        systemctl --user start {{ item }}.service

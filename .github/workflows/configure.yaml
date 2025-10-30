@@ -1,0 +1,68 @@
+name: Configure
+on:
+  workflow_dispatch:
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ansible
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZ_CREDS }}
+
+      - name: Init
+        run: terraform init
+        working-directory: terraform
+
+      - name: Get VM IP
+        id: tf-output
+        working-directory: terraform
+        run: |
+          tf_output=$(terraform output -raw public_ip)
+          echo "host_ip=${tf_output}" >> $GITHUB_OUTPUT
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup Ansible
+        run: pip install ansible
+
+      - name: Setup SSH key
+        run: |
+          mkdir ~/.ssh
+          chmod 700 ~/.ssh
+
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add VM to list of known hosts
+        run:
+          ssh-keyscan -H ${{ steps.tf-output.outputs.host_ip }} >> ~/.ssh/known_hosts
+
+      - name: Setup inventory
+        run: |
+          echo "server ansible_host=${{ steps.tf-output.outputs.host_ip }} ansible_ssh_user=adminuser ansible_ssh_private_key_file=~/.ssh/id_rsa" > inventory
+
+      - name: Run playbook
+        env:
+          KC_ADMIN_USERNAME: admin
+          KC_ADMIN_PASSWORD: admin123
+          CLIENT_ID: myclient
+          CLIENT_SECRET: mysecret
+          COOKIE_SECRET: abcdef1234567890abcdef12345678b6
+          TEST_USERNAME: testuser
+          TEST_PASSWORD: testpass
+        run: ansible-playbook -i inventory playbook.yaml
