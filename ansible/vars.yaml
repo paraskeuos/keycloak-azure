@@ -1,0 +1,20 @@
+  kc_port: 8080
+  kc_health_check_port: 9000
+  oauth2_proxy_port: 4180
+  web_server_port: 14000
+  reverse_proxy_port: 443
+  pg_port: 5432
+  kc_db_name: keycloak
+  pg_data_dir: pg_data
+  realm_config: realm.json
+  realm_name: myrealm
+  reverse_proxy_config: nginx.conf
+  cert_config: cert.cnf
+  cert_public: cert.crt
+  cert_private: cert.key
+  pods:
+      - postgres
+      - keycloak
+      - oauth2-proxy
+      - nginx
+      - nginx-proxy

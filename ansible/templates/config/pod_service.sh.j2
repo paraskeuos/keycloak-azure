@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+/usr/bin/env podman play kube {{ work_dir }}/{{ item }}.yaml --replace
+
+while /usr/bin/env podman pod ps | grep {{ item }}-pod | grep -v 'Exited' &> /dev/null
+do
+  sleep 5
+done
+
+exit 1
