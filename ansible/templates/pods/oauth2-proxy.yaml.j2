@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oauth2-proxy-pod
+spec:
+  initContainers:
+  - name: keycloak-checker
+    image: docker.io/curlimages/curl:latest
+    command:
+      - /usr/bin/env
+      - sh
+      - -c
+      - |
+        while true
+        do
+          status_code=$(curl -s -o /dev/null -w "%{http_code}\n" host.containers.internal:{{ kc_health_check_port }}/auth/health/ready)
+          echo "Status code is $status_code"
+          if [[ $status_code == 200 ]]
+          then
+            exit 0
+          fi
+
+          echo "Keycloak not ready. Waiting..."
+          sleep 10
+        done
+  containers:
+  - name: oauth2-proxy
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest 
+    args:
+      - --skip-provider-button=true
+      - --skip-oidc-discovery=false
+      - --insecure-oidc-allow-unverified-email=true
+      - --provider-ca-file=/etc/ssl/{{ cert_public }}
+    ports:
+      - containerPort: 4180
+        hostPort: {{ oauth2_proxy_port }}
+    env:
+      - name: OAUTH2_PROXY_PROVIDER
+        value: keycloak-oidc
+      - name: OAUTH2_PROXY_CLIENT_ID
+        value: {{ oauth2_client_id }}
+      - name: OAUTH2_PROXY_CLIENT_SECRET
+        value: {{ oauth2_client_secret }}
+      - name: OAUTH2_PROXY_REDIRECT_URL
+        value: https://{{ host_ip }}{{ '' if reverse_proxy_port == 443 else ':' ~ reverse_proxy_port }}/oauth2/callback
+      - name: OAUTH2_PROXY_EMAIL_DOMAINS
+        value: '*'
+      - name: OAUTH2_PROXY_UPSTREAMS
+        value: http://host.containers.internal:{{ web_server_port }}
+      - name: OAUTH2_PROXY_COOKIE_SECRET
+        value: {{ oauth2_cookie_secret }}
+      - name: OAUTH2_PROXY_OIDC_ISSUER_URL
+        value: https://{{ host_ip}}{{ '' if reverse_proxy_port == 443 else ':' ~ reverse_proxy_port }}/auth/realms/{{ realm_name }}
+      - name: OAUTH2_PROXY_COOKIE_SECURE
+        value: "false"
+      - name: OAUTH2_PROXY_FORCE_HTTPS
+        value: "false"
+      - name: OAUTH2_PROXY_HTTP_ADDRESS
+        value: 0.0.0.0:{{ oauth2_proxy_port }}
+    volumeMounts:
+      - name: cert-vol
+        mountPath: /etc/ssl/{{ cert_public }}:z
+        readOnly: true
+  volumes:
+    - name: cert-vol
+      hostPath:
+        path: {{ host_cert_dir }}/{{ cert_public }}
+        type: File

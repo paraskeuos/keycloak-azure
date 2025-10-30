@@ -1,0 +1,13 @@
+[Unit]
+Description={{ item | title }} Service
+After=network.target
+
+[Service]
+ExecStart={{ work_dir }}/{{ item }}_service.sh
+ExecStop=/usr/bin/env podman pod stop {{ item }}-pod
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+

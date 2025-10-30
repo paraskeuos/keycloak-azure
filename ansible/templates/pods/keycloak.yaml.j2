@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: keycloak-pod
+spec:
+  initContainers:
+  - name: pg-checker
+    image: docker.io/library/postgres:alpine
+    command:
+    - /usr/bin/env
+    - sh
+    - -c
+    - |
+      until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER
+      do
+        echo "Postgres database not ready. Waiting..."
+        sleep 10
+      done 
+    env:
+      - name: DB_HOST
+        value: host.containers.internal
+      - name: DB_PORT
+        value: {{ pg_port }}
+      - name: DB_USER
+        value: {{ kc_admin_username }}
+  containers:
+  - name: keycloak
+    image: quay.io/keycloak/keycloak:26.4.2
+    args:
+      - start-dev
+      - --import-realm
+      - --http-relative-path=/auth
+      - --hostname=https://{{ host_ip }}{{ '' if reverse_proxy_port == 443 else ':' ~ reverse_proxy_port }}/auth
+      - --proxy-headers=xforwarded
+    ports:
+      - containerPort: 8080
+        hostPort: {{ kc_port }}
+      - containerPort: 9000 
+        hostPort: {{ kc_health_check_port }}
+    env:
+      - name: KEYCLOAK_ADMIN
+        value: {{ kc_admin_username }}
+      - name: KEYCLOAK_ADMIN_PASSWORD
+        value: {{ kc_admin_password }}
+      - name: KC_HTTP_ENABLED
+        value: "true"
+      - name: KC_HOSTNAME_STRICT_HTTPS
+        value: "false"
+      - name: KC_HOSTNAME_STRICT
+        value: "false"
+      - name: KEYCLOAK_IMPORT
+        value: /opt/keycloak/data/import/{{ realm_config }}
+      - name: KC_HEALTH_ENABLED
+        value: true
+      - name: KC_DB
+        value: postgres
+      - name: KC_DB_URL
+        value: jdbc:postgresql://host.containers.internal:{{ pg_port }}/{{ kc_db_name }}
+      - name: KC_DB_USERNAME
+        value: {{ kc_admin_username }}
+      - name: KC_DB_PASSWORD
+        value: {{ kc_admin_password }}
+    volumeMounts:
+      - name: realm-vol
+        mountPath: /opt/keycloak/data/import/{{ realm_config }}:Z
+        readOnly: true
+  volumes:
+    - name: realm-vol
+      hostPath:
+        path: {{ work_dir }}/{{ realm_config }}
+        type: File
