@@ -54,15 +54,15 @@ jobs:
 
       - name: Setup inventory
         run: |
-          echo "server ansible_host=${{ steps.tf-output.outputs.host_ip }} ansible_ssh_user=adminuser ansible_ssh_private_key_file=~/.ssh/id_rsa" > inventory
+          echo "server ansible_host=${{ steps.tf-output.outputs.host_ip }} ansible_ssh_user=${{ secrets.VM_ADMIN_USER }} ansible_ssh_private_key_file=~/.ssh/id_rsa" > inventory
 
       - name: Run playbook
         env:
-          KC_ADMIN_USERNAME: admin
-          KC_ADMIN_PASSWORD: admin123
-          CLIENT_ID: myclient
-          CLIENT_SECRET: mysecret
-          COOKIE_SECRET: abcdef1234567890abcdef12345678b6
-          TEST_USERNAME: testuser
-          TEST_PASSWORD: testpass
+          KC_ADMIN_USERNAME: ${{ secrets.KC_ADMIN_USERNAME }}
+          KC_ADMIN_PASSWORD: ${{ secrets.KC_ADMIN_PASSWORD }}
+          CLIENT_ID: ${{ vars.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
         run: ansible-playbook -i inventory playbook.yaml

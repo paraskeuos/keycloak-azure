@@ -24,13 +24,13 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   size                = "Standard_B2s"
-  admin_username      = "adminuser"
+  admin_username      = "${var.vm_admin_user}"
   network_interface_ids = [
     azurerm_network_interface.nic.id,
   ]
 
   admin_ssh_key {
-    username   = "adminuser"
+    username   = "${var.vm_admin_user}"
     public_key = file("~/.ssh/id_rsa.pub")
   }
 
@@ -39,8 +39,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
-
-  #source_image_id = "/communityGalleries/fedora-5e266ba4-2250-406d-adad-5d73860d958f/images/Fedora-Cloud-42-x64/versions/latest"
 
   source_image_reference {
     publisher = "almalinux"
