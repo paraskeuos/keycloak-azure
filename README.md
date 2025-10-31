@@ -1,6 +1,12 @@
-![CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/rollout.yaml/badge.svg)
-![CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/configure.yaml/badge.svg)
-![CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/disassemble.yaml/badge.svg)  
+`main`  
+![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/rollout.yaml/badge.svg?branch=main)
+![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/configure.yaml/badge.svg?branch=main)
+![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/disassemble.yaml/badge.svg?branch=main)  
+  
+`dev`  
+![dev CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/rollout.yaml/badge.svg?branch=dev)
+![dev CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/configure.yaml/badge.svg?branch=dev)
+![dev CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/disassemble.yaml/badge.svg?branch=dev)  
 
 # Keycloak web stack - Azure, Terraform, Ansible and Podman
 
