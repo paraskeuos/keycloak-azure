@@ -1,10 +1,10 @@
-# Keycloak web stack - Azure, Terraform, Ansible and Podman
-
-Deployment and configuration of a static web server with Keycloak identity provider behind a SSL terminating reverse proxy.  
-
 ![CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/rollout.yaml/badge.svg)
 ![CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/configure.yaml/badge.svg)
 ![CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/disassemble.yaml/badge.svg)  
+
+# Keycloak web stack - Azure, Terraform, Ansible and Podman
+
+Deployment and configuration of a static web server with Keycloak identity provider behind a SSL terminating reverse proxy.  
 
 ## Infrastructure
 
