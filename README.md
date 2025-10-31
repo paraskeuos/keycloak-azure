@@ -1,16 +1,10 @@
-`main`  
-![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/rollout.yaml/badge.svg?branch=main)
-![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/configure.yaml/badge.svg?branch=main)
-![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/disassemble.yaml/badge.svg?branch=main)  
-  
-`dev`  
-![dev CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/rollout.yaml/badge.svg?branch=dev)
-![dev CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/configure.yaml/badge.svg?branch=dev)
-![dev CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/disassemble.yaml/badge.svg?branch=dev)  
-
 # Keycloak web stack - Azure, Terraform, Ansible and Podman
 
 Deployment and configuration of a static web server with Keycloak identity provider behind a SSL terminating reverse proxy.  
+  
+![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/rollout.yaml/badge.svg?branch=main)
+![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/configure.yaml/badge.svg?branch=main)
+![main CI](https://github.com/paraskeuos/keycloak-azure/actions/workflows/disassemble.yaml/badge.svg?branch=main)  
 
 ## Infrastructure
 
